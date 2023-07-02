@@ -7,6 +7,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.llms import OpenAI
+from langchain.memory import ConversationBufferMemory
 
 #要約用に、abstractだけ持ってくる関数
 #question1とは微妙に違うので注意
@@ -62,6 +63,7 @@ def summarize_pdf(pdf_file_path, docs, llm):
 
     Japanese output(ですます調): """
     PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])
+    
     chain = load_summarize_chain(llm, chain_type="map_reduce", 
                                 map_prompt=PROMPT, combine_prompt=PROMPT)
     custom_summary = chain({"input_documents": docs_abst}, return_only_outputs=True)["output_text"]
@@ -73,20 +75,27 @@ def summarize_pdf(pdf_file_path, docs, llm):
     return custom_summary
 
 #Q&Aの関数
-def qanda(knowledge_base, llm):
+def qanda(knowledge_base, llm, custom_summary):
     #プロンプトの設定
-    prompt_template = """あなたはフレンドリーなAIアシスタントです。以下のcontextを使用して、最後のquestionに答えてください。\
+    prompt_template = """あなたはフレンドリーなAIアシスタントです。以下のcontextとchat_historyを使用して、最後のquestionに答えてください。\
     答えがわからない場合は、'すみません、その質問の答えは本論文に記載がため、わかりません。'と言ってください。\
     また、日本語で回答してください。 
 
     {context}
-
+    
+    {chat_history}
     質問: {question}    
     回答:"""
 
     PROMPT = PromptTemplate(
-        template=prompt_template, input_variables=["context", "question"]
+        template=prompt_template, input_variables=["context", "question", "chat_history"]
     )
+    
+    memory = ConversationBufferMemory(memory_key="chat_history", input_key="question")
+    
+    #first responseをmemoryに格納しておく
+    #custom_summaryにしているのは、頭の"SYSTEM:"を省くため
+    memory.chat_memory.add_ai_message(custom_summary)
 
     #input
     user_question = input('USER:')
@@ -96,22 +105,20 @@ def qanda(knowledge_base, llm):
         print("SYSTEM:こちらこそ！また何か気になる論文があればいつでも聞いて下さいね。")
         return 
     elif user_question == "終了":
-        return         
+        return            
     else : 
         #終了しない時
         #英語で出力してしまう時の対策
         user_question = user_question + "日本語で回答して下さい。"
-
+    
     while True:
         docs_qa = knowledge_base.similarity_search(user_question)
-        chain = load_qa_chain(llm, chain_type="map_reduce", question_prompt=PROMPT)
-        chain({"input_documents": docs_qa, "question": user_question}, return_only_outputs=True)
-
-        response = chain.run(input_documents=docs_qa, question=user_question)
+        chain = load_qa_chain(llm, chain_type="map_reduce", question_prompt=PROMPT, memory = memory)
+        response = chain({"input_documents": docs_qa, "question": user_question}, return_only_outputs=True)["output_text"]
 
         #空白を詰める。
         print(''.join(f"SYSTEM : {response}".split()))
-
+        
         user_question = input('USER:')
         
         #終了の合図
@@ -123,8 +130,8 @@ def qanda(knowledge_base, llm):
         else : 
             #終了しない時
             user_question = user_question + "日本語で回答して下さい。"
-
-
+            
+            
 def main():
     url = sys.argv[1]    
     openai_key = sys.argv[2]
@@ -139,12 +146,15 @@ def main():
     knowledge_base = pdf_database(docs)
     
     #初めの要約
-    custom_summary = summarize_pdf(f"{url}", docs, llm)
+    custom_summary = summarize_pdf(f"{url}", docs, llm)    
+    
+    #first_responseとして格納しておく
     #空白を詰める。
-    print(''.join(f"SYSTEM : こんにちは！{custom_summary}何かお手伝い出来ることはありますか？".split()))
+    first_response = ''.join(f"SYSTEM : こんにちは！{custom_summary}何かお手伝い出来ることはありますか？".split()) 
+    print(first_response)
     
     #Q&A
-    qanda(knowledge_base, llm)
+    qanda(knowledge_base, llm, custom_summary)
         
 if __name__ == "__main__":
     main()

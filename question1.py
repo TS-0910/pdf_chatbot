@@ -35,11 +35,11 @@ def summarize_pdf(pdf_file_path, llm):
     #abstractだけ持ってくる
     docs = abstract_extraction(pdf_file_path)
     prompt_template = """    
-    Write a concise summary of this in one sentence. Start with 'This is a paper about'. Traslate into Japanese at the end.        
-    
+    Write a concise summary of this in one sentence. Start with 'This is a paper about'. Then, traslate into Japanese with ですます調.      
+
     {text}
 
-    Summary in Japanese: """
+    Japanese output(ですます調): """
     PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])
     chain = load_summarize_chain(llm, chain_type="map_reduce", 
                                 map_prompt=PROMPT, combine_prompt=PROMPT)
@@ -47,6 +47,8 @@ def summarize_pdf(pdf_file_path, llm):
     
     #1文にする
     custom_summary = custom_summary.split("。")[0] + "。"
+    #空白を埋める
+    custom_summary = ''.join(custom_summary.split()) 
     
     return custom_summary
 

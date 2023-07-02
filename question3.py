@@ -1,6 +1,3 @@
-#環境に応じてこちらをコメントアウト
-# os.system('pip install langchain openai pypdf tiktoken > /dev/null')
-
 import os, openai, re, sys
 from langchain.document_loaders import PyPDFLoader
 from langchain.chains.summarize import load_summarize_chain
@@ -83,74 +80,7 @@ def url_detection(text):
     if match:
         return match.group(1)
     else : 
-        return False    
-
-#Q&Aの関数
-# def qanda(knowledge_base, llm, loop_num):
-#     #プロンプトの設定
-#     prompt_template = """あなたはフレンドリーなAIアシスタントです。以下のcontextを使用して、最後のquestionに答えてください。\
-#     答えがわからない場合は、'すみません、その質問の答えは本論文に記載がため、わかりません。'と言ってください。\
-#     また、日本語で回答してください。 
-
-#     {context}
-
-#     質問: {question}    
-#     回答:"""
-
-#     PROMPT = PromptTemplate(
-#         template=prompt_template, input_variables=["context", "question"]
-#     )
-
-#     #input
-#     user_question = input('USER:')
-    
-#     #終了の合図
-#     if user_question == "ありがとう！":
-#         print("SYSTEM:こちらこそ！また何か気になる論文があればいつでも聞いて下さいね。")
-#         return 
-#     elif user_question == "終了":
-#         return         
-#     else : 
-#         #終了しない時
-#         #英語で出力してしまう時の対策
-#         user_question = user_question + "日本語で回答して下さい。"
-
-#     while True:
-#         docs_qa = knowledge_base.similarity_search(user_question)
-#         chain = load_qa_chain(llm, chain_type="map_reduce", question_prompt=PROMPT)
-#         chain({"input_documents": docs_qa, "question": user_question}, return_only_outputs=True)
-
-#         response = chain.run(input_documents=docs_qa, question=user_question)
-
-#         #空白を詰める。
-#         print(''.join(f"SYSTEM : {response}".split()))
-
-#         user_question = input('USER:')
-        
-#         #終了の合図
-#         if user_question == "ありがとう！":
-#             print("SYSTEM:こちらこそ！また何か気になる論文があればいつでも聞いて下さいね。")
-#             break
-#         elif user_question == "終了":
-#             break        
-#         else : 
-#             #終了しない時
-            
-#             #urlが含まれている時
-#             if url_detection(user_question):
-#                 url = url_detection(user_question)
-#                 print("SYSTEM:" + url + "についてですね！調べるので少々お待ちください。")
-#                 loop_num += 1
-#                 #再帰的に次のurlについて処理させる
-#                 main(url, loop_num)
-                
-#             #urlが含まれていないかつloopが1回目の時
-#             if loop_num == 0:
-#                 user_question = user_question + "日本語で回答して下さい。"
-#             #loopが2回目以降の時(終了させる時)
-#             else : 
-#                 break
-                   
+        return False                       
     
 def qanda(knowledge_base, llm, first, finish):
     #プロンプトの設定
@@ -209,8 +139,6 @@ def qanda(knowledge_base, llm, first, finish):
             else : 
                 break
           
-    
-    
 def main(url, first, finish):    
     #初期設定
     llm = OpenAI(temperature = 0)

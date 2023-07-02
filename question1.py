@@ -3,9 +3,6 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.chains.summarize import load_summarize_chain
 from langchain import OpenAI, PromptTemplate
 
-#環境に応じてこちらをコメントアウト
-# os.system('pip install langchain openai pypdf tiktoken > /dev/null')
-
 #abstractのみ抽出する関数
 def abstract_extraction(pdf_file_path):    
     #PDF読み込み

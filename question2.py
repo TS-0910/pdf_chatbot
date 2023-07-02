@@ -1,8 +1,3 @@
-# import os
-
-#環境に応じてこちらをコメントアウト
-# os.system('pip install langchain openai pypdf tiktoken > /dev/null')
-
 import os, openai, re, sys
 from langchain.document_loaders import PyPDFLoader
 from langchain.chains.summarize import load_summarize_chain
